@@ -10,10 +10,8 @@ engines:
       languages:
       - ruby
       concurrency: 1
-    exclude_paths:
+    exclude_patterns:
       - /spec/**/*
-  brakeman:
-    enabled: true
   bundler-audit:
     enabled: true
   scss-lint:
@@ -23,13 +21,9 @@ engines:
     config:
       all: false
       threshold: 0.6
-    exclude_paths:
+    exclude_patterns:
       - /spec/**/*
 ratings:
    paths:
    - Gemfile.lock
    - "**.rb"
-exclude_paths:
-  - /vendor/**/*
-  - /apidoc/**/*
-  - /db/**/*
