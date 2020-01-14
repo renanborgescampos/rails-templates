@@ -1,0 +1,77 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.6.5
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - rails-templates-dependencies-{{ checksum "Gemfile.lock" }}
+
+      - run:
+          name: Bundle install
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
+
+      - run:
+          name: Download CodeClimate cc-test-reporter and make it executable
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod u+x cc-test-reporter
+
+      - save_cache:
+          key: rails-templates-dependencies-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+            - cc-test-reporter
+
+  test:
+    docker:
+      - image: circleci/ruby:2.6.5
+        environment:
+          COVERAGE: true
+          CC_TEST_REPORTER_ID: a9e592c192db6b7d44346b87a89d99653af4359c4f2d44901bba6fa859be0b92
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: rails-templates-dependencies-{{ checksum "Gemfile.lock" }}
+
+      - run:
+          name: Bundle install
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
+
+      - run:
+          name: Report before build to CodeClimate
+          command: ./cc-test-reporter before-build
+
+      - type: shell
+        command: |
+          bundle exec rspec --profile 10 \
+                            --format RspecJunitFormatter \
+                            --out test_results/rspec.xml \
+                            --format Fuubar \
+                            $(circleci tests glob "spec/**/*_spec.rb" | circleci tests split --split-by=timings)
+
+      - run:
+          name: Report after build to CodeClimate
+          command: ./cc-test-reporter after-build --coverage-input-type simplecov --exit-code $?
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
