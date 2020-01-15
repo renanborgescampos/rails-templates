@@ -11,9 +11,7 @@ engines:
       - ruby
       concurrency: 1
     exclude_patterns:
-      - /spec/**/*
-  bundler-audit:
-    enabled: true
+      - /spec/**/*  
   scss-lint:
     enabled: true
   flog:
